@@ -1,0 +1,6 @@
+description: The efficient hum and announcements of Taipei's bustling metro system
+tag: metro-urban-taipei-transport-busy
+author: Wei Zhang
+last_updated: 2023-10-01
+details: This description captures the sounds of Taipei's metro system, including announcements and the hum of trains.
+publish_date: 2023-09-28

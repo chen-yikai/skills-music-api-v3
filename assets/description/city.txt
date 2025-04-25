@@ -1,0 +1,6 @@
+description: The vibrant mix of honking horns and urban chatter in a lively city
+tag: city-urban-noise-traffic-lively
+author: Olivia Brown
+last_updated: 2023-10-01
+details: This description captures the essence of a bustling city environment, including traffic noise and urban activity.
+publish_date: 2023-09-25

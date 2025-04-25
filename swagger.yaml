@@ -1,0 +1,333 @@
+openapi: 3.0.0
+info:
+    title: Skills Music API V3
+    version: 1.0.0
+
+paths:
+    /sounds:
+        get:
+            summary: Retrieve a list of sounds
+            parameters:
+                - in: header
+                  name: search
+                  schema:
+                      type: string
+                  description: 'Search term for name, tags, or author'
+                - in: header
+                  name: sort
+                  schema:
+                      type: string
+                      enum: [asc, desc]
+                  description: 'Sort order by publish date (asc or desc)'
+                - in: header
+                  name: filter
+                  schema:
+                      type: string
+                      enum: [author, tag, date]
+                  description: 'Filter type (author, tag, or date)'
+                - in: header
+                  name: author
+                  schema:
+                      type: string
+                  description: 'Filter by author name (requires filter: author)'
+                - in: header
+                  name: tag
+                  schema:
+                      type: string
+                  description: 'Filter by tag (requires filter: tag)'
+                - in: header
+                  name: startDate
+                  schema:
+                      type: string
+                      format: date
+                  description: 'Start date for date range filter (requires filter: date)'
+                - in: header
+                  name: endDate
+                  schema:
+                      type: string
+                      format: date
+                  description: 'End date for date range filter (requires filter: date)'
+            responses:
+                '200':
+                    description: A list of sounds
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Sound'
+                '404':
+                    description: No sounds found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error:
+                                        type: string
+
+    /alarms:
+        post:
+            summary: Create a new alarm
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - soundId
+                                - soundName
+                                - alarmTime
+                            properties:
+                                soundId:
+                                    type: integer
+                                soundName:
+                                    type: string
+                                alarmTime:
+                                    type: string
+                                    format: date-time
+            responses:
+                '201':
+                    description: Alarm created successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Alarm'
+                '400':
+                    description: Invalid request
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    error:
+                                        type: string
+        get:
+            summary: Get all alarms
+            responses:
+                '200':
+                    description: List of alarms
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Alarm'
+
+    /alarms/{id}:
+        get:
+            summary: Get alarm by ID
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Alarm details
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Alarm'
+                '404':
+                    description: Alarm not found
+        put:
+            summary: Update alarm
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Alarm'
+            responses:
+                '200':
+                    description: Alarm updated successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Alarm'
+                '400':
+                    description: Invalid request
+        delete:
+            summary: Delete alarm
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Alarm deleted successfully
+                '400':
+                    description: Failed to delete alarm
+
+    /alarms/{id}/toggle:
+        patch:
+            summary: Toggle alarm active status
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Alarm status toggled successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Alarm'
+                '400':
+                    description: Failed to toggle alarm status
+
+    /alarms/active/{time}:
+        get:
+            summary: Get active alarms for a specific time
+            parameters:
+                - in: path
+                  name: time
+                  required: true
+                  schema:
+                      type: string
+                      format: date-time
+            responses:
+                '200':
+                    description: List of active alarms
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Alarm'
+
+    /audio/{fileName}:
+        get:
+            summary: Retrieve an audio file
+            parameters:
+                - in: path
+                  name: fileName
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: The audio file
+                    content:
+                        audio/mpeg:
+                            schema:
+                                type: string
+                                format: binary
+                '404':
+                    description: Audio file not found
+
+    /cover/{fileName}:
+        get:
+            summary: Retrieve a cover image
+            parameters:
+                - in: path
+                  name: fileName
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: The cover image
+                    content:
+                        image/jpeg:
+                            schema:
+                                type: string
+                                format: binary
+                '404':
+                    description: Cover image not found
+
+components:
+    schemas:
+        Sound:
+            type: object
+            properties:
+                id:
+                    type: integer
+                name:
+                    type: string
+                metadata:
+                    type: object
+                    properties:
+                        description:
+                            type: string
+                        tags:
+                            type: array
+                            items:
+                                type: string
+                        author:
+                            type: string
+                        lastUpdated:
+                            type: string
+                        details:
+                            type: string
+                        publishDate:
+                            type: string
+                audio:
+                    type: object
+                    properties:
+                        url:
+                            type: string
+                        format:
+                            type: string
+                        duration:
+                            type: integer
+                cover:
+                    type: object
+                    properties:
+                        url:
+                            type: string
+                        format:
+                            type: string
+                        dimensions:
+                            type: object
+                            properties:
+                                width:
+                                    type: integer
+                                height:
+                                    type: integer
+                statistics:
+                    type: object
+                    properties:
+                        plays:
+                            type: integer
+                        favorites:
+                            type: integer
+                        downloads:
+                            type: integer
+                relatedSounds:
+                    type: array
+                    items:
+                        type: integer
+        Alarm:
+            type: object
+            properties:
+                id:
+                    type: integer
+                soundId:
+                    type: integer
+                soundName:
+                    type: string
+                alarmTime:
+                    type: string
+                    format: date-time
+                isActive:
+                    type: boolean
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time

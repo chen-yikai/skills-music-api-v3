@@ -1,0 +1,6 @@
+description: A symphony of forest sounds with chirping birds and rustling foliage
+tag: nature-forest-birds-foliage-wildlife
+author: David Kim
+last_updated: 2023-10-01
+details: This description captures the diverse sounds of a forest, including birds and rustling leaves.
+publish_date: 2023-09-17

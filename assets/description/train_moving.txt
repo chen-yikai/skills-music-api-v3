@@ -1,0 +1,6 @@
+description: The rhythmic clatter of wheels on tracks as a train speeds through the countryside
+tag: train-transport-countryside-rhythmic-travel
+author: Maria Rodriguez
+last_updated: 2023-10-01
+details: This description highlights the rhythmic and soothing sound of a train moving through a scenic countryside.
+publish_date: 2023-09-20

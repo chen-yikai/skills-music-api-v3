@@ -1,0 +1,6 @@
+description: The bustling hum of cars and buses weaving through London's busy streets
+tag: urban-traffic-london-cars-busy
+author: James Wilson
+last_updated: 2023-10-01
+details: This description captures the dynamic and noisy environment of London's urban traffic.
+publish_date: 2023-09-20
