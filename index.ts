@@ -49,14 +49,25 @@ interface Sound {
 }
 
 const app = new Hono()
+const VALID_API_KEYS = ['scplay-secret-key', 'kitty-secret-key']
+
+app.use('*', async (c, next) => {
+    if (c.req.path === '/ui' || c.req.path === '/doc' || c.req.path === '/swagger-config') {
+        await next()
+        return
+    }
+    const apiKey = c.req.header('X-API-Key')
+    if (!apiKey || !VALID_API_KEYS.includes(apiKey)) {
+        return c.json({ error: 'Unauthorized: Invalid or missing API key' }, 401)
+    }
+    await next()
+})
 
 async function generateApi(): Promise<Sound[]> {
     const sounds: Sound[] = []
     const dirPath = './assets/music'
-
     try {
         const files = await readdir(dirPath)
-
         for (const fileName of files) {
             if (fileName.endsWith('.mp3')) {
                 const title = fileName
@@ -65,11 +76,8 @@ async function generateApi(): Promise<Sound[]> {
                     .split(' ')
                     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(' ')
-
                 const descriptionFile = Bun.file(`./assets/description/${fileName.replace('.mp3', '.txt')}`)
                 const descriptionContent = await descriptionFile.text()
-
-                // Parse the description file content
                 const lines = descriptionContent.split('\n')
                 const metadata: SoundMetadata = {
                     description: lines[0].replace('description: ', ''),
@@ -79,25 +87,18 @@ async function generateApi(): Promise<Sound[]> {
                     details: lines[4].replace('details: ', ''),
                     publishDate: lines[5].replace('publish_date: ', ''),
                 }
-
-                // Get cover image dimensions
                 const coverPath = `./assets/cover/${fileName.replace('.mp3', '.jpg')}`
                 const coverImage = sharp(coverPath)
                 const coverMetadata = await coverImage.metadata()
-
-                // Generate random statistics for demonstration
                 const statistics = {
                     plays: Math.floor(Math.random() * 10000),
                     favorites: Math.floor(Math.random() * 1000),
                     downloads: Math.floor(Math.random() * 5000),
                 }
-
-                // Generate random related sounds (excluding current sound)
                 const relatedSounds = Array.from(
                     { length: Math.floor(Math.random() * 3) + 1 },
                     () => Math.floor(Math.random() * files.length) + 1
                 ).filter((id) => id !== sounds.length + 1)
-
                 sounds.push({
                     id: sounds.length + 1,
                     name: title,
@@ -105,7 +106,7 @@ async function generateApi(): Promise<Sound[]> {
                     audio: {
                         url: `/audio/${fileName}`,
                         format: 'mp3',
-                        duration: Math.floor(Math.random() * 300) + 60, // Random duration between 1-5 minutes
+                        duration: Math.floor(Math.random() * 300) + 60,
                     },
                     cover: {
                         url: `/cover/${fileName.replace('.mp3', '.jpg')}`,
@@ -130,12 +131,9 @@ async function generateApi(): Promise<Sound[]> {
 app.get('/sounds', async (c) => {
     const sounds = await generateApi()
     const search = c.req.header('search')
-    const sort = c.req.header('sort') // "asc" or "desc"
-    const filter = c.req.header('filter') // "author", "tag", "date"
-
+    const sort = c.req.header('sort')
+    const filter = c.req.header('filter')
     let filteredSounds = sounds
-
-    // Apply search filter
     if (search) {
         filteredSounds = filteredSounds.filter(
             (sound) =>
@@ -144,8 +142,6 @@ app.get('/sounds', async (c) => {
                 sound.metadata.author.toLowerCase().includes(search.toLowerCase())
         )
     }
-
-    // Apply additional filters
     if (filter) {
         switch (filter.toLowerCase()) {
             case 'author':
@@ -183,8 +179,6 @@ app.get('/sounds', async (c) => {
                 break
         }
     }
-
-    // Apply sorting
     if (sort) {
         filteredSounds.sort((a, b) => {
             const dateA = new Date(a.metadata.publishDate)
@@ -192,7 +186,6 @@ app.get('/sounds', async (c) => {
             return sort.toLowerCase() === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime()
         })
     }
-
     return c.json(
         filteredSounds.length > 0 ? filteredSounds : { error: 'No sounds found' },
         filteredSounds.length > 0 ? 200 : 404
@@ -203,7 +196,6 @@ app.get('/audio/:fileName', async (c) => {
     const fileName = c.req.param('fileName')
     const filePath = `./assets/music/${fileName}`
     const file = Bun.file(filePath)
-
     if (await file.exists()) {
         return c.body(file.stream(), {
             headers: {
@@ -218,7 +210,6 @@ app.get('/cover/:fileName', async (c) => {
     const fileName = c.req.param('fileName')
     const filePath = `./assets/cover/${fileName}`
     const file = Bun.file(filePath)
-
     if (await file.exists()) {
         return c.body(file.stream(), {
             headers: {
@@ -233,8 +224,19 @@ app.get(
     '/ui',
     swaggerUI({
         url: '/doc',
+        configUrl: '/swagger-config',
     })
 )
+
+app.get('/swagger-config', (c) => {
+    return c.json({
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        docExpansion: 'list',
+        filter: true,
+        tryItOutEnabled: true,
+    })
+})
 
 app.get('/doc', (c) => {
     const swaggerYaml = readFileSync('./swagger.yaml', 'utf8')
@@ -242,11 +244,11 @@ app.get('/doc', (c) => {
     return c.json(openApiSpec)
 })
 
-// Alarm endpoints
 app.post('/alarms', async (c) => {
     try {
+        const apiKey = c.req.header('X-API-Key')!
         const { soundId, soundName, alarmTime } = await c.req.json()
-        const alarm = createAlarm(soundId, soundName, alarmTime)
+        const alarm = createAlarm(apiKey, soundId, soundName, alarmTime)
         return c.json(alarm, 201)
     } catch (error) {
         return c.json({ error: 'Failed to create alarm' }, 400)
@@ -254,14 +256,16 @@ app.post('/alarms', async (c) => {
 })
 
 app.get('/alarms', (c) => {
-    const alarms = getAllAlarms()
+    const apiKey = c.req.header('X-API-Key')!
+    const alarms = getAllAlarms(apiKey)
     return c.json(alarms)
 })
 
 app.get('/alarms/:id', (c) => {
+    const apiKey = c.req.header('X-API-Key')!
     const id = parseInt(c.req.param('id'))
     try {
-        const alarm = getAlarmById(id)
+        const alarm = getAlarmById(apiKey, id)
         return c.json(alarm)
     } catch (error) {
         return c.json({ error: 'Alarm not found' }, 404)
@@ -269,10 +273,11 @@ app.get('/alarms/:id', (c) => {
 })
 
 app.put('/alarms/:id', async (c) => {
+    const apiKey = c.req.header('X-API-Key')!
     const id = parseInt(c.req.param('id'))
     try {
         const updates = await c.req.json()
-        const alarm = updateAlarm(id, updates)
+        const alarm = updateAlarm(apiKey, id, updates)
         return c.json(alarm)
     } catch (error) {
         return c.json({ error: 'Failed to update alarm' }, 400)
@@ -280,9 +285,10 @@ app.put('/alarms/:id', async (c) => {
 })
 
 app.delete('/alarms/:id', (c) => {
+    const apiKey = c.req.header('X-API-Key')!
     const id = parseInt(c.req.param('id'))
     try {
-        deleteAlarm(id)
+        deleteAlarm(apiKey, id)
         return c.json({ message: 'Alarm deleted successfully' })
     } catch (error) {
         return c.json({ error: 'Failed to delete alarm' }, 400)
@@ -290,9 +296,10 @@ app.delete('/alarms/:id', (c) => {
 })
 
 app.patch('/alarms/:id/toggle', (c) => {
+    const apiKey = c.req.header('X-API-Key')!
     const id = parseInt(c.req.param('id'))
     try {
-        const alarm = toggleAlarmStatus(id)
+        const alarm = toggleAlarmStatus(apiKey, id)
         return c.json(alarm)
     } catch (error) {
         return c.json({ error: 'Failed to toggle alarm status' }, 400)
@@ -300,9 +307,22 @@ app.patch('/alarms/:id/toggle', (c) => {
 })
 
 app.get('/alarms/active/:time', (c) => {
+    const apiKey = c.req.header('X-API-Key')!
     const time = c.req.param('time')
-    const alarms = getActiveAlarmsForTime(time)
+    const alarms = getActiveAlarmsForTime(apiKey, time)
     return c.json(alarms)
+})
+
+app.get('/validate-key', (c) => {
+    const apiKey = c.req.header('X-API-Key')
+    if (!apiKey) {
+        return c.json({ valid: false, message: 'No API key provided' }, 401)
+    }
+    const isValid = VALID_API_KEYS.includes(apiKey)
+    if (!isValid) {
+        return c.json({ valid: false, message: 'Invalid API key' }, 401)
+    }
+    return c.json({ valid: true, message: 'API key is valid' })
 })
 
 Bun.serve({
