@@ -1,4 +1,4 @@
-# skills-music-api-v2
+# skills-music-api
 
 ```
 bun install
