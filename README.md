@@ -2,7 +2,7 @@
 
 ```
 bun install
-bun run watch index.ts
+bun run --watch index.ts
 ```
 
 ## Validate API Key
