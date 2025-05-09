@@ -1,7 +1,6 @@
 openapi: 3.0.0
 info:
   title: 聲景探險家 API
-  description: Github Repo: chen-yikai/skills-music-api-v3
   version: 3.0.0
 components:
   securitySchemes:
