@@ -67,13 +67,12 @@ app.use("*", async (c, next) => {
     "/cover",
     "/audio",
   ];
-  publicPath.forEach((path) => {
   for (const path of publicPath) {
     if (c.req.path.startsWith(path)) {
       await next();
       return;
     }
-  })
+  }
   const apiKey = c.req.header("X-API-Key");
   if (!apiKey || !VALID_API_KEYS.includes(apiKey)) {
     return c.json({ error: "Unauthorized: Invalid or missing API key" }, 401);
