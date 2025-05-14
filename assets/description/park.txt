@@ -3,4 +3,4 @@ tag: park-nature-birds-leaves-serene
 author: Emma Lee
 last_updated: 2023-10-01
 details: This description captures the peaceful ambiance of a natural park, featuring bird songs and gentle leaf movements.
-publish_date: 2023-09-20
+publish_date: 2023-09-10

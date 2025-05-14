@@ -157,9 +157,6 @@ app.get("/sounds", async (c) => {
     filteredSounds = filteredSounds.filter(
       (sound) =>
         sound.name.toLowerCase().includes(search.toLowerCase()) ||
-        sound.metadata.tags.some((tag) =>
-          tag.toLowerCase().includes(search.toLowerCase()),
-        ) ||
         sound.metadata.author.toLowerCase().includes(search.toLowerCase()),
     );
   }

@@ -3,4 +3,4 @@ tag: mountain-wind-echoes-high-altitude
 author: Aisha Khan
 last_updated: 2023-10-01
 details: This description captures the serene and isolated sounds of a mountain range, including wind and echoes.
-publish_date: 2023-09-15
+publish_date: 2023-09-05
